@@ -236,7 +236,7 @@ jobs:
         if: ${{ inputs.enable_hspeed }}
         run: |
           cd ${{ github.workspace }}
-          git clone --quiet --depth=1 --recurse-submodules https://github.com/joshuaseltzer/YTHoldForSpeed.git
+          git clone --quiet --depth=1 --recurse-submodules https://github.com/aricloverEXTRA/YTHoldForSpeed-Sideloaded.git YTHoldForSpeed
 
       - name: Build YouPiP
         if: ${{ inputs.enable_youpip }}
