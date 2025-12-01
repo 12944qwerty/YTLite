@@ -3,37 +3,6 @@ name: Create YouTube Plus app
 on:
   workflow_dispatch:
     inputs:
-
-      enable_youpip:
-        description: "Integrate YouPiP"
-        type: boolean
-        required: true
-        default: false
-
-      enable_ytuhd:
-        description: "Integrate YTUHD"
-        type: boolean
-        required: true
-        default: false
-
-      enable_yq:
-        description: "Integrate YouQuality"
-        type: boolean
-        required: true
-        default: false
-
-      enable_ryd:
-        description: "Integrate Return YouTube Dislikes"
-        type: boolean
-        required: true
-        default: false
-
-      enable_demc:
-        description: "Integrate DontEatMyContent"
-        type: boolean
-        required: true
-        default: false
-
       ipa_url:
         description: "URL to the decrypted IPA file"
         default: ""
@@ -58,12 +27,6 @@ on:
         required: true
         type: string
 
-      info_note:
-        description: "TIP: Learn more about integrations in the README via the link below"
-        default: "https://github.com/dayanch96/YTLite#tweak-integration-details"
-        type: string
-        required: false
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -85,7 +48,7 @@ jobs:
       - name: Hide sensitive inputs
         uses: levibostian/action-hide-sensitive-inputs@v1
         with:
-          exclude_inputs: bundle_id,display_name,enable_demc,enable_ryd,enable_youpip,enable_yq,enable_ytuhd,info_note,tweak_version
+          exclude_inputs: bundle_id,display_name,info_note,tweak_version
 
       - name: Download and validate IPA
         run: |
@@ -105,7 +68,6 @@ jobs:
         run: echo "$(brew --prefix make)/libexec/gnubin" >> $GITHUB_PATH
 
       - name: Cache Theos
-        if: ${{ inputs.enable_youpip || inputs.enable_ytuhd || inputs.enable_yq || inputs.enable_ryd || inputs.enable_demc }}
         id: theos
         uses: actions/cache@v4
         env:
@@ -116,7 +78,6 @@ jobs:
           restore-keys: ${{ env.cache-name }}
 
       - name: Setup Theos
-        if: ${{ (inputs.enable_youpip || inputs.enable_ytuhd || inputs.enable_yq || inputs.enable_ryd || inputs.enable_demc) && steps.theos.outputs.cache-hit != 'true' }}
         uses: actions/checkout@v4.1.7
         with:
           repository: theos/theos
@@ -125,11 +86,11 @@ jobs:
           submodules: recursive
 
       - name: Download iOS SDK
-        if: ${{ (inputs.enable_youpip || inputs.enable_ytuhd || inputs.enable_yq || inputs.enable_ryd || inputs.enable_demc) && steps.theos.outputs.cache-hit != 'true' }}
         run: |
-          git clone --quiet -n --depth=1 --filter=tree:0 https://github.com/theos/sdks/
+          # Only download the specific SDK version
+          git clone -n --depth=1 --filter=tree:0 https://github.com/aricloverALT/sdks/
           cd sdks
-          git sparse-checkout set --no-cone iPhoneOS16.5.sdk
+          git sparse-checkout set --no-cone iPhoneOS17.5.sdk
           git checkout
           mv *.sdk $THEOS/sdks
         env:
@@ -153,7 +114,6 @@ jobs:
           mv *.appex ${{ github.workspace }}
 
       - name: Clone YouTubeHeader
-        if: ${{ inputs.enable_youpip || inputs.enable_ytuhd || inputs.enable_yq || inputs.enable_ryd || inputs.enable_demc }}
         run: |
           if [ -d "$THEOS/include/YouTubeHeader" ]; then
             echo "YouTubeHeader exists. Pulling latest changes..."
@@ -174,7 +134,6 @@ jobs:
           THEOS: ${{ github.workspace }}/theos
 
       - name: Clone PSHeader
-        if: ${{ inputs.enable_youpip || inputs.enable_ytuhd || inputs.enable_yq || inputs.enable_ryd || inputs.enable_demc }}
         run: |
           if [ -d "$THEOS/include/PSHeader" ]; then
             echo "PSHeader exists. Pulling latest changes..."
@@ -189,49 +148,53 @@ jobs:
           THEOS: ${{ github.workspace }}/theos
 
       - name: Clone YouPiP
-        if: ${{ inputs.enable_youpip }}
         run: |
           cd ${{ github.workspace }}
           git clone --quiet --depth=1 https://github.com/PoomSmart/YouPiP.git
-
-      - name: Clone YTUHD
-        if: ${{ inputs.enable_ytuhd }}
-        run: |
-          cd ${{ github.workspace }}
-          git clone --quiet --depth=1 https://github.com/Tonwalter888/YTUHD.git
           
+      - name: Clone YTUHD
+        uses: actions/checkout@v4.1.7
+        with:
+          repository: Tonwalter888/YTUHD
+          ref: 44535466ad464d8b4c3338a289f1b729bb7d1e4a
+          path: ${{ github.workspace }}/YTUHD
+
       - name: Clone Return-YouTube-Dislikes
-        if: ${{ inputs.enable_ryd }}
         run: |
           cd ${{ github.workspace }}
           git clone --quiet --depth=1 https://github.com/PoomSmart/Return-YouTube-Dislikes.git
- 
+
       - name: Clone YouGroupSettings
-        if: ${{ inputs.enable_demc }}
         run: |
           cd ${{ github.workspace }}
           git clone --quiet --depth=1 https://github.com/PoomSmart/YouGroupSettings.git
 
       - name: Clone YouQuality
-        if: ${{ inputs.enable_yq }}
         run: |
           cd ${{ github.workspace }}
           git clone --quiet --depth=1 https://github.com/PoomSmart/YouQuality.git
 
       - name: Clone YTVideoOverlay
-        if: ${{ inputs.enable_yq || inputs.enable_youpip }}
         run: |
           cd ${{ github.workspace }}
           git clone --quiet --depth=1 https://github.com/PoomSmart/YTVideoOverlay.git
 
       - name: Clone DontEatMyContent
-        if: ${{ inputs.enable_demc }}
         run: |
           cd ${{ github.workspace }}
           git clone --quiet --depth=1 --recurse-submodules https://github.com/therealFoxster/DontEatMyContent.git
 
+      - name: Clone YTHoldForSpeed
+        run: |
+          cd ${{ github.workspace }}
+          git clone --quiet --depth=1 --recurse-submodules https://github.com/aricloverEXTRA/YTHoldForSpeed-Sideloaded.git YTHoldForSpeed
+
+      - name: Clone YTShortsProgress
+        run: |
+          cd ${{ github.workspace }}
+          git clone --quiet --depth=1 --recurse-submodules https://github.com/PoomSmart/YTShortsProgress.git
+
       - name: Build YouPiP
-        if: ${{ inputs.enable_youpip }}
         run: |
           cd ${{ github.workspace }}/YouPiP
           make clean package DEBUG=0 FINALPACKAGE=1
@@ -240,7 +203,6 @@ jobs:
           THEOS: ${{ github.workspace }}/theos
 
       - name: Build YTUHD
-        if: ${{ inputs.enable_ytuhd }}
         run: |
           cd ${{ github.workspace }}/YTUHD
           make clean package DEBUG=0 FINALPACKAGE=1
@@ -249,7 +211,6 @@ jobs:
           THEOS: ${{ github.workspace }}/theos
 
       - name: Build Return-YouTube-Dislikes
-        if: ${{ inputs.enable_ryd }}
         run: |
           cd ${{ github.workspace }}/Return-YouTube-Dislikes
           make clean package DEBUG=0 FINALPACKAGE=1
@@ -258,7 +219,6 @@ jobs:
           THEOS: ${{ github.workspace }}/theos
 
       - name: Build YouGroupSettings
-        if: ${{ inputs.enable_demc }}
         run: |
           cd ${{ github.workspace }}/YouGroupSettings
           make clean package DEBUG=0 FINALPACKAGE=1
@@ -267,7 +227,6 @@ jobs:
           THEOS: ${{ github.workspace }}/theos
 
       - name: Build YouQuality
-        if: ${{ inputs.enable_yq }}
         run: |
           cd ${{ github.workspace }}/YouQuality
           make clean package DEBUG=0 FINALPACKAGE=1
@@ -276,7 +235,6 @@ jobs:
           THEOS: ${{ github.workspace }}/theos
 
       - name: Build YTVideoOverlay
-        if: ${{ inputs.enable_yq || inputs.enable_youpip }}
         run: |
           cd ${{ github.workspace }}/YTVideoOverlay
           make clean package DEBUG=0 FINALPACKAGE=1
@@ -285,11 +243,26 @@ jobs:
           THEOS: ${{ github.workspace }}/theos
 
       - name: Build DontEatMyContent
-        if: ${{ inputs.enable_demc }}
         run: |
           cd ${{ github.workspace }}/DontEatMyContent
           make clean package DEBUG=0 FINALPACKAGE=1
           mv packages/*.deb ${{ github.workspace }}/demc.deb
+        env:
+          THEOS: ${{ github.workspace }}/theos
+
+      - name: Build YTHoldForSpeed
+        run: |
+          cd ${{ github.workspace }}/YTHoldForSpeed
+          make clean package DEBUG=0 FINALPACKAGE=1
+          mv packages/*.deb ${{ github.workspace }}/hspeed.deb
+        env:
+          THEOS: ${{ github.workspace }}/theos
+
+      - name: Build YTShortsProgress
+        run: |
+          cd ${{ github.workspace }}/YTShortsProgress
+          make clean package DEBUG=0 FINALPACKAGE=1
+          mv packages/*.deb ${{ github.workspace }}/shortsbar.deb
         env:
           THEOS: ${{ github.workspace }}/theos
 
